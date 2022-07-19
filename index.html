@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AudioContentViewer</title>
+    <!-- Since GitHub Raw files use text/plain as MIME type the script cannot be executed when linking directly, instead routed over jsdelivr-->
+    <script src="https://cdn.jsdelivr.net/gh/MicroContent/BinaryNumberContentViewer/seamless.child.min.js"></script>
+    <style>
+        .div-answers {
+            margin-top: 2em;
+        }
+    </style>
+    <script type="application/javascript">
+        var connection = window.seamless.connect({
+            url: window.location.url,
+            allowStyleInjection: true,
+        });
+
+        connection.receive(function (data) {
+            switch (data.type) {
+                case 'setContent':
+                    // parent for varying type of input sends data as special object; data.main[0] is the array of arrays with your message inside
+                    window.data = data.main[0]
+
+                    init();
+                    break;
+
+                case 'submit':
+                    if (data.value === 'true') {
+                        onSubmit();
+                    }
+                    break;
+
+                case 'getXapiStatements':
+                    stmts = data.stmts;
+                    break;
+            }
+        });
+
+        function init() {
+            if (window.data === undefined) {
+                window.data = {
+                    audioUrl: "",
+                    isMultipleChoice: true
+
+                };
+            } else {
+                const answerMap = new Map(Object.entries(window.data.answers));
+                answerMap.forEach(((value, key) => {
+                    window.data.isMultipleChoice? createMultipleChoiceElement(key): createSingleChoiceElement(key);
+                }));
+            }
+
+            document.getElementById('audio').src = window.data.audioUrl;
+        }
+
+        function updateLayout() {
+            connection.send({
+                type: 'updateLayout'
+            });
+        }
+
+        function sendStatement(stmt) {
+            connection.send({
+                type: 'sendXapiStatement',
+                stmt: stmt
+            });
+        }
+
+        function getStatements() {
+            connection.send({
+                type: 'getXapiStatements'
+            });
+        }
+    </script>
+</head>
+<body>
+<!-- EXAMPLE CODE - EDIT BELOW TO VIEW DATA -->
+<div id="content">
+
+    <p id="question"></p>
+
+    <audio controls id="audio"></audio>
+
+    <!-- MULTIPLE CHOICE -->
+    <div id="div_answers_mc" class="div-answers">
+    </div>
+
+
+    <!-- SINGLE CHOICE -->
+    <div id="div_answers_sc" class="div-answers" >
+    </div>
+
+    <div id="statistics"></div> <!--todo necessary?-->
+
+
+    <script type="application/javascript">
+        function onInteraction() {
+            var stmt = {};
+            // actor is set by hosting application
+            stmt.actor = undefined;
+            stmt.verb = {
+                "id": "http://adlnet.gov/expapi/verbs/interacted",
+                "display": {
+                    "de-DE": "interagierte",
+                    "en-US": "interacted",
+                    "fr-FR": "a interagi",
+                    "es-ES": "interactuó"
+                }
+            };
+            stmt.object = getXapiObject();
+            var responses = [];
+            for (var i = 0; i < 8; i++) {
+                if (active[i]) {
+                    responses.push(Math.pow(2, (7 - i)).toString());
+                }
+            }
+            stmt.result = {
+                response: responses.reduce(function (acc, e) {
+                    return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
+                }, "")
+            };
+            sendStatement(stmt);
+        }
+
+        function getXapiObject() {
+            // may be called on init()
+
+            return {
+                "objectType": "Activity",
+                // id is set by hosting application
+                "id": undefined,
+                "definition": {
+                    "description": {
+                        "de-AT": "What is the binary representation of " + window.data.number + "?"
+                    },
+                    "type": "http://adlnet.gov/expapi/activities/cmi.interaction",
+                    "interactionType": "choice",
+                    "choices": [128, 64, 32, 16, 8, 4, 2, 1].map(function (e, i) {
+                        return {
+                            id: i.toString(),
+                            description: {
+                                "de-AT": i.toString()
+                            }
+                        }
+                    }),
+                    "correctResponsesPattern": [solution.map(function (e, i) {
+                        return e ? Math.pow(2, (7 - i)).toString() : ""
+                    })
+                        .reduce(function (acc, e) {
+                            return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
+                        }, "")]
+                }
+            };
+        }
+
+        function createSingleChoiceElement(optionString) {
+            /* <div className="radio">
+                 <label className="label-answer-r">
+                     <input type="radio" className="input-r" name="optcorrect" checked>
+                 </label>
+             </div>*/
+            let divSC = document.createElement('div');
+            let labelSC = document.createElement('label');
+            labelSC.innerHTML = optionString;
+            let radioButton = document.createElement('input');
+            radioButton.type = "radio"
+            radioButton.name = "radio-btn"
+            labelSC.prepend(radioButton);
+            divSC.appendChild(labelSC);
+
+            document.getElementById('div_answers_sc').appendChild(divSC);
+
+        }
+
+        function createMultipleChoiceElement(optionString) {
+            /*<div class="checkbox">
+            <label class="label-answer-cb">
+                <input type="checkbox" class="input-cb" name="optcorrect" value="">
+            </label>
+        </div>*/
+            let divMC = document.createElement('div');
+            let labelMC = document.createElement('label');
+            labelMC.innerHTML = optionString;
+            let checkBox = document.createElement('input');
+            checkBox.type = "checkbox"
+            checkBox.name = "checkbox-btn"
+
+            labelMC.prepend(checkBox);
+            divMC.prepend(labelMC);
+
+            document.getElementById('div_answers_mc').appendChild(divMC);
+        }
+
+        function onSubmit() {
+            // todo
+            updateLayout();
+        }
+
+        function showStatistics(result) {
+            // todo needed?
+            updateLayout();
+        }
+
+        function hideStatistics() {
+            document.getElementById('statistics').innerHTML = '';
+        }
+
+        init();
+        let audioSrc;
+        // updateLayout();
+    </script>
+    <!-- END OF EXAMPLE CODE -->
+</body>
+</html>
