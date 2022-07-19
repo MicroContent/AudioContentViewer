@@ -5,10 +5,30 @@
     <title>AudioContentViewer</title>
     <!-- Since GitHub Raw files use text/plain as MIME type the script cannot be executed when linking directly, instead routed over jsdelivr-->
     <script src="https://cdn.jsdelivr.net/gh/MicroContent/BinaryNumberContentViewer/seamless.child.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
     <style>
         .div-answers {
             margin-top: 2em;
         }
+
+        .correct {
+            background: #D4ECC6;
+            border-radius: 2em;
+        }
+
+        .incorrect {
+            background: #E2A1A1;
+            border-radius: 2em;
+        }
+
     </style>
     <script type="application/javascript">
         var connection = window.seamless.connect({
@@ -21,7 +41,6 @@
                 case 'setContent':
                     // parent for varying type of input sends data as special object; data.main[0] is the array of arrays with your message inside
                     window.data = data.main[0]
-
                     init();
                     break;
 
@@ -42,10 +61,10 @@
                 window.data = {
                     audioUrl: "",
                     isMultipleChoice: true
-
                 };
+
             } else {
-                const answerMap = new Map(Object.entries(window.data.answers));
+                answerMap = new Map(Object.entries(window.data.answers));
                 answerMap.forEach(((value, key) => {
                     window.data.isMultipleChoice? createMultipleChoiceElement(key): createSingleChoiceElement(key);
                 }));
@@ -93,9 +112,12 @@
 
     <div id="statistics"></div> <!--todo necessary?-->
 
+    <button onclick="test()">test stuff</button>
+
+</div>
 
     <script type="application/javascript">
-        function onInteraction() {
+        function onInteraction() { // todo get selected option
             var stmt = {};
             // actor is set by hosting application
             stmt.actor = undefined;
@@ -110,6 +132,15 @@
             };
             stmt.object = getXapiObject();
             var responses = [];
+
+            $("."+optionClassName).each(function (){
+                let optionString = $(this).text();
+                let isCorrect = answerMap.get(optionString);
+                let isChecked = $(this).children(':first').is(':checked');
+                if (isChecked){
+                    responses.push(optionString) // todo brauch ma correct?
+                }
+            });
             for (var i = 0; i < 8; i++) {
                 if (active[i]) {
                     responses.push(Math.pow(2, (7 - i)).toString());
@@ -123,8 +154,14 @@
             sendStatement(stmt);
         }
 
-        function getXapiObject() {
+        function test(){
+            console.log(getXapiObject());
+        }
+
+        function getXapiObject() { // todo
             // may be called on init()
+
+
 
             return {
                 "objectType": "Activity",
@@ -132,22 +169,22 @@
                 "id": undefined,
                 "definition": {
                     "description": {
-                        "de-AT": "What is the binary representation of " + window.data.number + "?"
+                        "de-AT": window.data.question,
                     },
                     "type": "http://adlnet.gov/expapi/activities/cmi.interaction",
                     "interactionType": "choice",
-                    "choices": [128, 64, 32, 16, 8, 4, 2, 1].map(function (e, i) {
+                    "choices": Array.from(answerMap).map(([question, isCorrect], i) => {
                         return {
                             id: i.toString(),
                             description: {
-                                "de-AT": i.toString()
+                                "de-AT": question
                             }
                         }
                     }),
-                    "correctResponsesPattern": [solution.map(function (e, i) {
-                        return e ? Math.pow(2, (7 - i)).toString() : ""
+                    "correctResponsesPattern": [Array.from(answerMap).map(([question, isCorrect], i) =>{
+                        return isCorrect ? i : ""
                     })
-                        .reduce(function (acc, e) {
+                        .reduce(function (acc, e) { // todo chekc if this still works - it doesnt gute nacht
                             return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
                         }, "")]
                 }
@@ -163,6 +200,7 @@
             let divSC = document.createElement('div');
             let labelSC = document.createElement('label');
             labelSC.innerHTML = optionString;
+            labelSC.classList.add(optionClassName)
             let radioButton = document.createElement('input');
             radioButton.type = "radio"
             radioButton.name = "radio-btn"
@@ -181,7 +219,9 @@
         </div>*/
             let divMC = document.createElement('div');
             let labelMC = document.createElement('label');
+            labelMC.value
             labelMC.innerHTML = optionString;
+            labelMC.classList.add(optionClassName);
             let checkBox = document.createElement('input');
             checkBox.type = "checkbox"
             checkBox.name = "checkbox-btn"
@@ -193,7 +233,15 @@
         }
 
         function onSubmit() {
-            // todo
+            $("."+optionClassName).each(function (){
+                let isCorrect = answerMap.get($(this).text());
+                let isChecked = $(this).children(':first').is(':checked');
+                if (isCorrect){
+                    $(this).addClass('correct');
+                } else if(isChecked){
+                    $(this).addClass('incorrect');
+                }
+            });
             updateLayout();
         }
 
@@ -207,7 +255,9 @@
         }
 
         init();
-        let audioSrc;
+        const optionClassName = 'option';
+        let answerMap;
+        let stmts;
         // updateLayout();
     </script>
     <!-- END OF EXAMPLE CODE -->
