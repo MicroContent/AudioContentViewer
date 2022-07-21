@@ -5,8 +5,8 @@
     <title>AudioContentViewer</title>
     <!-- Since GitHub Raw files use text/plain as MIME type the script cannot be executed when linking directly, instead routed over jsdelivr-->
     <script src="https://cdn.jsdelivr.net/gh/MicroContent/BinaryNumberContentViewer/seamless.child.min.js"></script>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <!-- Latest compiled and minified CSS
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">-->
 
     <!-- jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -64,9 +64,9 @@
                 };
 
             } else {
-                answerMap = new Map(Object.entries(window.data.answers));
-                answerMap.forEach(((value, key) => {
-                    window.data.isMultipleChoice? createMultipleChoiceElement(key): createSingleChoiceElement(key);
+                answerArray = window.data.answers;
+                answerArray.forEach(((option) => {
+                    window.data.isMultipleChoice? createMultipleChoiceElement(option.text): createSingleChoiceElement(option.text);
                 }));
             }
 
@@ -131,38 +131,32 @@
                 }
             };
             stmt.object = getXapiObject();
-            var responses = [];
+            const responses = [];
 
             $("."+optionClassName).each(function (){
                 let optionString = $(this).text();
-                let isCorrect = answerMap.get(optionString);
                 let isChecked = $(this).children(':first').is(':checked');
+                let index =  answerArray.find(element => element.text === optionString).index
                 if (isChecked){
-                    responses.push(optionString) // todo brauch ma correct?
+                    responses.push(index.toString());
                 }
             });
-            for (var i = 0; i < 8; i++) {
-                if (active[i]) {
-                    responses.push(Math.pow(2, (7 - i)).toString());
-                }
-            }
+
             stmt.result = {
                 response: responses.reduce(function (acc, e) {
                     return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
                 }, "")
             };
+            console.log(stmt);
             sendStatement(stmt);
         }
 
         function test(){
-            console.log(getXapiObject());
+            onSubmit();
         }
 
-        function getXapiObject() { // todo
+        function getXapiObject() {
             // may be called on init()
-
-
-
             return {
                 "objectType": "Activity",
                 // id is set by hosting application
@@ -173,18 +167,18 @@
                     },
                     "type": "http://adlnet.gov/expapi/activities/cmi.interaction",
                     "interactionType": "choice",
-                    "choices": Array.from(answerMap).map(([question, isCorrect], i) => {
+                    "choices": answerArray.map((option, i) => {
                         return {
                             id: i.toString(),
                             description: {
-                                "de-AT": question
+                                "de-AT": option.text
                             }
                         }
                     }),
-                    "correctResponsesPattern": [Array.from(answerMap).map(([question, isCorrect], i) =>{
-                        return isCorrect ? i : ""
+                    "correctResponsesPattern": [answerArray.map((option, i) =>{
+                        return option.correct ? i.toString() : ""
                     })
-                        .reduce(function (acc, e) { // todo chekc if this still works - it doesnt gute nacht
+                        .reduce(function (acc, e) {
                             return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
                         }, "")]
                 }
@@ -192,11 +186,6 @@
         }
 
         function createSingleChoiceElement(optionString) {
-            /* <div className="radio">
-                 <label className="label-answer-r">
-                     <input type="radio" className="input-r" name="optcorrect" checked>
-                 </label>
-             </div>*/
             let divSC = document.createElement('div');
             let labelSC = document.createElement('label');
             labelSC.innerHTML = optionString;
@@ -212,11 +201,6 @@
         }
 
         function createMultipleChoiceElement(optionString) {
-            /*<div class="checkbox">
-            <label class="label-answer-cb">
-                <input type="checkbox" class="input-cb" name="optcorrect" value="">
-            </label>
-        </div>*/
             let divMC = document.createElement('div');
             let labelMC = document.createElement('label');
             labelMC.value
@@ -233,14 +217,13 @@
         }
 
         function onSubmit() {
-            $("."+optionClassName).each(function (){
-                let isCorrect = answerMap.get($(this).text());
+            // todo build an xapi stmt
+            onInteraction();
+            $("."+optionClassName).each(function (){ // todo when is this reset?
+                let isCorrect = answerArray.find(option => option.text === $(this).text()).correct;
                 let isChecked = $(this).children(':first').is(':checked');
-                if (isCorrect){
-                    $(this).addClass('correct');
-                } else if(isChecked){
-                    $(this).addClass('incorrect');
-                }
+
+                isCorrect? $(this).addClass('correct') : isChecked ? $(this).addClass('incorrect') : null;
             });
             updateLayout();
         }
@@ -256,7 +239,10 @@
 
         init();
         const optionClassName = 'option';
-        let answerMap;
+        let answerArray = [];
+        /* structure for element in answerArray:
+        {index: int, text: string, correct: bool}
+         */
         let stmts;
         // updateLayout();
     </script>
