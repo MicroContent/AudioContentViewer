@@ -112,12 +112,12 @@
 
     <div id="statistics"></div> <!--todo necessary?-->
 
-    <button onclick="test()">test stuff</button>
+    <button onclick="test()">test stuff</button> <!--todo remove-->
 
 </div>
 
     <script type="application/javascript">
-        function onInteraction() { // todo get selected option
+        function onInteraction() {
             var stmt = {};
             // actor is set by hosting application
             stmt.actor = undefined;
@@ -131,23 +131,13 @@
                 }
             };
             stmt.object = getXapiObject();
-            const responses = [];
-
-            $("."+optionClassName).each(function (){
-                let optionString = $(this).text();
-                let isChecked = $(this).children(':first').is(':checked');
-                let index =  answerArray.find(element => element.text === optionString).index
-                if (isChecked){
-                    responses.push(index.toString());
-                }
-            });
+            const responses = getSelectedResponsesIndices();
 
             stmt.result = {
                 response: responses.reduce(function (acc, e) {
                     return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
                 }, "")
             };
-            console.log(stmt);
             sendStatement(stmt);
         }
 
@@ -185,6 +175,20 @@
             };
         }
 
+        function getSelectedResponsesIndices(){
+            const responses = []
+            $("."+optionClassName).each(function (){
+                let optionString = $(this).text();
+                let isChecked = $(this).children(':first').is(':checked');
+                let index =  answerArray.find(element => element.text === optionString).index
+                if (isChecked){
+                    responses.push(index.toString());
+                }
+            });
+
+            return responses
+        }
+
         function createSingleChoiceElement(optionString) {
             let divSC = document.createElement('div');
             let labelSC = document.createElement('label');
@@ -217,16 +221,59 @@
         }
 
         function onSubmit() {
-            // todo build an xapi stmt
-            onInteraction();
-            $("."+optionClassName).each(function (){ // todo when is this reset?
-                let isCorrect = answerArray.find(option => option.text === $(this).text()).correct;
-                let isChecked = $(this).children(':first').is(':checked');
+            showHideSolution(isShowingSolution);
 
-                isCorrect? $(this).addClass('correct') : isChecked ? $(this).addClass('incorrect') : null;
-            });
+            if(!isShowingSolution) {
+                let responses = getSelectedResponsesIndices();
+                let allRight = false;
+                let stmt = {};
+                // actor is set by hosting application
+                stmt.actor = undefined;
+                stmt.verb = {
+                    "id": "http://adlnet.gov/expapi/verbs/answered",
+                    "display": {
+                        "de-DE": "beantwortete",
+                        "en-US": "answered",
+                        "fr-FR": "a répondu",
+                        "es-ES": "contestó"
+                    }
+                };
+                stmt.object = getXapiObject();
+                stmt.result = {
+                    response: responses.reduce(function (acc, e) {
+                        return (acc.length > 0 && e.length > 0) ? acc + "[,]" + e : acc.length > 0 ? acc : e;
+                    }, ""),
+                    success: allRight
+                };
+                console.log("result: ");
+                console.log(stmt);
+                sendStatement(stmt);
+
+
+                getStatements(); // todo necessary?
+                setTimeout(function() { showStatistics(stmt.result) }, 1000); // todo necessary?
+            }
+
+            isShowingSolution = !isShowingSolution;
             updateLayout();
         }
+
+        function showHideSolution(isShowingSolution) {
+            if(!isShowingSolution){
+                $("."+optionClassName).each(function (){
+                    let isCorrect = answerArray.find(option => option.text === $(this).text()).correct;
+                    let isChecked = $(this).children(':first').is(':checked');
+
+                    isCorrect? $(this).addClass('correct') : isChecked ? $(this).addClass('incorrect') : null;
+                });
+            } else {
+                $("."+optionClassName).each(function () {
+                    $(this).removeClass('incorrect');
+                    $(this).removeClass('correct');
+                })
+            }
+        }
+
 
         function showStatistics(result) {
             // todo needed?
@@ -240,6 +287,7 @@
         init();
         const optionClassName = 'option';
         let answerArray = [];
+        let isShowingSolution = false;
         /* structure for element in answerArray:
         {index: int, text: string, correct: bool}
          */
