@@ -112,8 +112,6 @@
 
     <div id="statistics"></div> <!--todo necessary?-->
 
-    <button onclick="test()">test stuff</button> <!--todo remove-->
-
 </div>
 
     <script type="application/javascript">
@@ -191,12 +189,13 @@
 
         function createSingleChoiceElement(optionString) {
             let divSC = document.createElement('div');
+            divSC.tabIndex = 0;
             let labelSC = document.createElement('label');
             labelSC.innerHTML = optionString;
-            labelSC.classList.add(optionClassName)
+            labelSC.classList.add(optionClassName);
             let radioButton = document.createElement('input');
-            radioButton.type = "radio"
-            radioButton.name = "radio-btn"
+            radioButton.type = "radio";
+            radioButton.name = "radio-btn";
             labelSC.prepend(radioButton);
             divSC.appendChild(labelSC);
 
@@ -206,8 +205,8 @@
 
         function createMultipleChoiceElement(optionString) {
             let divMC = document.createElement('div');
+            divMC.tabIndex = 0;
             let labelMC = document.createElement('label');
-            labelMC.value
             labelMC.innerHTML = optionString;
             labelMC.classList.add(optionClassName);
             let checkBox = document.createElement('input');
@@ -248,10 +247,6 @@
                 console.log("result: ");
                 console.log(stmt);
                 sendStatement(stmt);
-
-
-                getStatements(); // todo necessary?
-                setTimeout(function() { showStatistics(stmt.result) }, 1000); // todo necessary?
             }
 
             isShowingSolution = !isShowingSolution;
