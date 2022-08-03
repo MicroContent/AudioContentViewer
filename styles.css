@@ -1,0 +1,19 @@
+.div-answers {
+    margin-top: 2em;
+}
+
+.correct {
+    background: #D4ECC6;
+    border-radius: 2em;
+}
+
+.incorrect {
+    background: #E2A1A1;
+    border-radius: 2em;
+}
+
+body {
+    margin-bottom: 2em;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 300;
+}
