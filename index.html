@@ -96,6 +96,8 @@
 
     <div id="statistics"></div> <!--todo necessary?-->
 
+    <button onclick="onSubmit()">submit</button>
+
 </div>
 
     <script type="application/javascript">
@@ -121,10 +123,6 @@
                 }, "")
             };
             sendStatement(stmt);
-        }
-
-        function test(){
-            onSubmit();
         }
 
         function getXapiObject() {
@@ -208,7 +206,20 @@
 
             if(!isShowingSolution) {
                 let responses = getSelectedResponsesIndices();
-                let allRight = false;
+                let nrOfCorrectResponses = answerArray.reduce(function (prev, currentValue){
+                    return currentValue.correct ? prev+1 : prev;
+                    }, 0);
+                let allRight = true;
+
+                if( responses.length === nrOfCorrectResponses) {
+                    for (let i = 0; i < responses.length; i++) {
+                        let optionCorrect = (answerArray.find(element => element.index.toString() === responses[i]).correct);
+                        allRight = allRight && optionCorrect; // todo multiple choice includes all?
+
+                    }
+                } else allRight = false;
+
+
                 let stmt = {};
                 // actor is set by hosting application
                 stmt.actor = undefined;
@@ -264,12 +275,13 @@
         }
 
         init();
-        const optionClassName = 'option';
+
+        /** structure for element in answerArray:
+         * {index: int, text: string, correct: bool}
+        */
         let answerArray = [];
+        const optionClassName = 'option';
         let isShowingSolution = false;
-        /* structure for element in answerArray:
-        {index: int, text: string, correct: bool}
-         */
         let stmts;
         // updateLayout();
     </script>
