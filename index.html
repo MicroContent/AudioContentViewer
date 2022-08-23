@@ -46,7 +46,7 @@
         function init() {
             if (window.data === undefined) {
                 window.data = {
-                    audioUrl: "",
+                    mediaUrlArray: [""],
                     isMultipleChoice: true
                 };
 
@@ -57,7 +57,7 @@
                 }));
             }
 
-            document.getElementById('audio').src = window.data.audioUrl;
+            document.getElementById('audio').src = window.data.mediaUrlArray[0];
         }
 
         function updateLayout() {
