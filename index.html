@@ -43,6 +43,7 @@
             }
         });
 
+
         function init() {
             if (window.data === undefined) {
                 window.data = {
@@ -96,8 +97,6 @@
     <!-- SINGLE CHOICE -->
     <div id="div_answers_sc" class="div-answers" >
     </div>
-
-    <div id="statistics"></div> <!--todo necessary?-->
 
 </div>
 
@@ -197,7 +196,7 @@
             checkBox.name = "checkbox-btn"
 
             labelMC.prepend(checkBox);
-            divMC.prepend(labelMC);
+            divMC.appendChild(labelMC);
 
             document.getElementById('div_answers_mc').appendChild(divMC);
         }
@@ -284,8 +283,8 @@
         const optionClassName = 'option';
         let isShowingSolution = false;
         let stmts;
-        // updateLayout();
+
     </script>
-    <!-- END OF EXAMPLE CODE -->
+
 </body>
 </html>
